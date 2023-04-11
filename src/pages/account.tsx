@@ -1,75 +1,91 @@
-import { useState, useEffect } from 'react'
-import { useUser, useSupabaseClient, useSession } from '@supabase/auth-helpers-react'
-import { useRouter } from 'next/router'
+import { useState, useEffect } from "react";
+import {
+  useUser,
+  useSupabaseClient,
+  useSession,
+} from "@supabase/auth-helpers-react";
+import { useRouter } from "next/router";
 
 export default function Account() {
-  const router = useRouter()
-  const session = useSession()
-  const supabase = useSupabaseClient()
-  const user = useUser()
-  const [loading, setLoading] = useState(true)
-  const [username, setUsername] = useState(null)
-  const [website, setWebsite] = useState(null)
-  const [avatar_url, setAvatarUrl] = useState(null)
+  const router = useRouter();
+  const session = useSession();
+  const supabase = useSupabaseClient();
+  const user = useUser();
+  const [loading, setLoading] = useState(true);
+  const [username, setUsername] = useState("");
+  const [website, setWebsite] = useState("");
+  const [avatar_url, setAvatarUrl] = useState("");
 
   useEffect(() => {
-    if(session) {
-      getProfile()
+    if (session) {
+      getProfile();
     }
-  }, [session])
+  }, [session]);
 
   async function getProfile() {
     try {
-      setLoading(true)
+      if (user) {
+        setLoading(true);
 
-      let { data, error, status } = await supabase
-        .from('profiles')
-        .select(`username, website, avatar_url`)
-        .eq('id', user.id)
-        .single()
+        let { data, error, status } = await supabase
+          .from("profiles")
+          .select(`username, website, avatar_url`)
+          .eq("id", user.id)
+          .single();
 
-      if (error && status !== 406) {
-        throw error
-      }
+        if (error && status !== 406) {
+          throw error;
+        }
 
-      if (data) {
-        setUsername(data.username)
-        setWebsite(data.website)
-        setAvatarUrl(data.avatar_url)
+        if (data) {
+          setUsername(data.username);
+          setWebsite(data.website);
+          setAvatarUrl(data.avatar_url);
+        }
       }
     } catch (error) {
-      alert('Error loading user data!')
-      console.log(error)
+      alert("Error loading user data!");
+      console.log(error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   async function signOut() {
     await supabase.auth.signOut();
-    router.push('/')
+    router.push("/");
   }
 
-  async function updateProfile({ username, website, avatar_url }) {
+  async function updateProfile({
+    username,
+    website,
+    avatar_url,
+  }: {
+    username: string;
+    website: string;
+    avatar_url: string;
+  }) {
     try {
-      setLoading(true)
+      if (user) {
+        setLoading(true);
 
-      const updates = {
-        id: user.id,
-        username,
-        website,
-        avatar_url,
-        updated_at: new Date().toISOString(),
+        const updates = {
+          id: user.id,
+          username,
+          website,
+          avatar_url,
+          updated_at: new Date().toISOString(),
+        };
+
+        let { error } = await supabase.from("profiles").upsert(updates);
+        if (error) throw error;
+        alert("Profile updated!");
       }
-
-      let { error } = await supabase.from('profiles').upsert(updates)
-      if (error) throw error
-      alert('Profile updated!')
     } catch (error) {
-      alert('Error updating the data!')
-      console.log(error)
+      alert("Error updating the data!");
+      console.log(error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -84,9 +100,9 @@ export default function Account() {
         <input
           id="username"
           type="text"
-          value={username || ''}
+          value={username || ""}
           onChange={(e) => setUsername(e.target.value)}
-          className='text-black'
+          className="text-black"
         />
       </div>
       <div>
@@ -94,9 +110,9 @@ export default function Account() {
         <input
           id="website"
           type="website"
-          value={website || ''}
+          value={website || ""}
           onChange={(e) => setWebsite(e.target.value)}
-          className='text-black'
+          className="text-black"
         />
       </div>
 
@@ -106,7 +122,7 @@ export default function Account() {
           onClick={() => updateProfile({ username, website, avatar_url })}
           disabled={loading}
         >
-          {loading ? 'Loading ...' : 'Update'}
+          {loading ? "Loading ..." : "Update"}
         </button>
       </div>
 
@@ -116,5 +132,5 @@ export default function Account() {
         </button>
       </div>
     </div>
-  )
+  );
 }
